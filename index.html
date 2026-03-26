@@ -687,9 +687,7 @@
 
 <div class="tabs-wrapper" id="tabsWrapper">
   <button class="tab-add" id="addMonthBtn" title="Dodaj mesec">＋</button>
-</div>
-<div class="tabs-wrapper" style="border-top:none;padding-top:0;">
-  <button class="tab" id="devizeTabBtn" style="color:var(--green);border-bottom:2px solid transparent;">💶 Devizni račun</button>
+  <button class="tab" id="devizeTabBtn" style="color:var(--green);border-bottom:2px solid transparent;border-left:1px solid var(--border);margin-left:4px;padding-left:16px;">💶 Devize</button>
 </div>
 
 <div class="content" id="mainContent">
@@ -1762,6 +1760,16 @@ function hideDevizePage() {
 
 // ===================== INIT =====================
 loadState();
+
+// Devize tab dugme
+document.getElementById('devizeTabBtn').addEventListener('click', () => {
+  if (devizePageActive) {
+    hideDevizePage();
+    render();
+  } else {
+    showDevizePage();
+  }
+});
 
 // Skoci na tekuci mesec pri otvaranju
 (function() {
