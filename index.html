@@ -677,6 +677,54 @@
     width: 100%;
     display: block;
   }
+
+  /* DEVIZE-J sekcija u mesecu */
+  .devizeJ-sekcija {
+    background: var(--surface);
+    border: 1px solid #4f8ef755;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .devizeJ-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 120px 120px 120px 36px;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+    font-weight: 600;
+    align-items: center;
+    background: rgba(79,142,247,0.15);
+    border-bottom: 2px solid rgba(79,142,247,0.4);
+  }
+  .devizeJ-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 120px 120px 120px 36px;
+    gap: 8px;
+    padding: 6px 14px;
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+  .devizeJ-row:hover { background: var(--surface2); }
+  .devizeJ-tip-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    padding: 4px 6px;
+    width: 100%;
+    outline: none;
+    cursor: pointer;
+  }
+  .devizeJ-tip-select:focus { border-color: #4f8ef7; }
+  .tip-kupovina { color: #f76060; }
+  .tip-prodaja { color: #3ecfa0; }
+  .tip-dizanje { color: #f7c948; }
 </style>
 </head>
 <body>
@@ -746,14 +794,20 @@ const SEKCIJE = [
   { id: 'I', naziv: 'Razno', boja: '#aaaaaa', textBoja: '#000', defaultReds: 5 },
 ];
 
+// Devize po mesecu - posebna lista, nije u SEKCIJE
+const DEVIZE_TIPOVI = ['Kupovina', 'Prodaja', 'Dizanje'];
+
 // state: { months: [ { id, naziv, prenos, plata, uplate:[{naziv,datum,iznos}], sekcije:{B:[{naziv,datum,iznos}],...} } ] }
-let state = { months: [], devize: [] };
+let state = { months: [], devize: [], stanjeEvra: 0 };
 
 function loadState() {
   try {
     const s = localStorage.getItem('evidencija_troskova_v2');
     if (s) state = JSON.parse(s);
     if (!state.devize) state.devize = [];
+    if (state.stanjeEvra === undefined) state.stanjeEvra = 0;
+    // Ensure all months have devizeJ
+    state.months.forEach(m => { if (!m.devizeJ) m.devizeJ = []; });
   } catch(e) {}
 }
 
@@ -843,7 +897,8 @@ function blankMonth(mesec, godina, prenosi, prevMonth) {
     prenos: prenosi || 0,
     plata: 0,
     uplate,
-    sekcije: sek
+    sekcije: sek,
+    devizeJ: []
   };
 }
 
@@ -852,7 +907,17 @@ function calcMonth(m) {
   const prenos = parseNum(m.prenos);
   const plata = parseNum(m.plata);
   const ukUplata = m.uplate.reduce((a, r) => a + parseNum(r.iznos), 0);
-  const totalUplata = prenos + plata + ukUplata;
+
+  // Devize J uticaj na dinare
+  const devJ = m.devizeJ || [];
+  const devDinUticaj = devJ.reduce((a, r) => {
+    const din = parseNum(r.dinari);
+    if (r.tip === 'Kupovina') return a - din; // kupovina evra = oduzimamo dinare
+    if (r.tip === 'Prodaja') return a + din;  // prodaja evra = dodajemo dinare
+    return a; // dizanje nema uticaja na dinare
+  }, 0);
+
+  const totalUplata = prenos + plata + ukUplata + devDinUticaj;
 
   let troskovi = {};
   let totalTroskovi = 0;
@@ -862,8 +927,17 @@ function calcMonth(m) {
     totalTroskovi += t;
   });
 
+  // Stanje evra na računu - sabira sve kupovine, oduzima prodaje i dizanja
+  const stanjeEvra = devJ.reduce((a, r) => {
+    const eur = parseNum(r.evri);
+    if (r.tip === 'Kupovina') return a + eur;
+    if (r.tip === 'Prodaja') return a - eur;
+    if (r.tip === 'Dizanje') return a - eur;
+    return a;
+  }, 0);
+
   const razlika = totalUplata - totalTroskovi;
-  return { prenos, plata, ukUplata, totalUplata, troskovi, totalTroskovi, razlika };
+  return { prenos, plata, ukUplata, devDinUticaj, totalUplata, troskovi, totalTroskovi, razlika, stanjeEvra };
 }
 
 // ===================== RENDER =====================
@@ -963,6 +1037,10 @@ function buildMonthHTML(m) {
         <label>Razlika uplata – troškova</label>
         <div class="val ${razlikaClass}">${fmt(c.razlika)}</div>
       </div>
+      <div class="sum-card" style="border-color:#4f8ef7">
+        <label>💶 Stanje evra (ovaj mesec)</label>
+        <div class="val" style="color:#4f8ef7">${fmt(c.stanjeEvra)} €</div>
+      </div>
     </div>`;
 
   // Uplate sekcija
@@ -1017,6 +1095,55 @@ function buildMonthHTML(m) {
       </div>`;
   });
 
+  // Sekcija J - Devize (kupovina/prodaja/dizanje)
+  const devJ = m.devizeJ || [];
+  const devJRowsHTML = devJ.map((r, ri) => {
+    const tipColor = r.tip === 'Kupovina' ? '#f76060' : r.tip === 'Prodaja' ? '#3ecfa0' : '#f7c948';
+    return `
+      <div class="devizeJ-row">
+        <div class="row-num">${ri + 1}</div>
+        <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor}">
+          ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+        <input type="date" class="sek-input devJ-datum-inp" data-mid="${m.id}" data-idx="${ri}" value="${r.datum || ''}">
+        <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" style="text-align:right;${r.tip === 'Dizanje' ? 'opacity:0.4;pointer-events:none;' : ''}">
+        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 €" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7">
+        <button class="del-row-btn devJ-del-btn" data-mid="${m.id}" data-idx="${ri}" title="Obriši">✕</button>
+      </div>`;
+  }).join('');
+
+  const devJTotalEvri = devJ.reduce((a, r) => {
+    const eur = parseNum(r.evri);
+    if (r.tip === 'Kupovina') return a + eur;
+    if (r.tip === 'Prodaja') return a - eur;
+    if (r.tip === 'Dizanje') return a - eur;
+    return a;
+  }, 0);
+  const devJTotalDin = devJ.reduce((a, r) => {
+    if (r.tip === 'Dizanje') return a;
+    return a + parseNum(r.dinari);
+  }, 0);
+
+  let devizeJHTML = `
+    <div class="devizeJ-sekcija">
+      <div class="devizeJ-header">
+        <span class="slovo" style="background:#4f8ef7;color:#000">J</span>
+        <span style="color:#4f8ef7">Kupovina deviza</span>
+        <span style="color:var(--text-dim)">Datum</span>
+        <span style="color:var(--text-dim);text-align:right">Iznos (RSD)</span>
+        <span style="color:var(--text-dim);text-align:right">Iznos (€)</span>
+        <span></span>
+      </div>
+      ${devJRowsHTML}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--border);background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:8px;">
+        <button class="add-row-btn devJ-add-btn" data-mid="${m.id}" title="Dodaj red">＋</button>
+        <div style="display:flex;gap:20px;align-items:center;">
+          <span style="font-size:0.8rem;color:var(--text-dim)">Utrošeno RSD: <strong style="color:var(--yellow)">${fmt(devJTotalDin)}</strong></span>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#4f8ef7">${fmt(devJTotalEvri)} €</span>
+        </div>
+      </div>
+    </div>`;
+
   // Zbir bar dole
   let zbirHTML = `
     <div class="zbir-bar">
@@ -1046,7 +1173,7 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  return summaryHTML + uplateHTML + sekHTML + zbirHTML + grafikonHTML;
+  return summaryHTML + uplateHTML + sekHTML + devizeJHTML + zbirHTML + grafikonHTML;
 }
 
 function getDaysInMonth(mesec, godina) {
@@ -1408,6 +1535,63 @@ function attachListeners(m) {
         sek.splice(parseInt(e.target.dataset.idx), 1);
         onMonthChanged(e.target.dataset.mid);
       }
+    });
+  });
+
+  // ---- DEVIZE J ----
+  function blankDevJ() { return { tip: 'Kupovina', datum: '', dinari: '', evri: '' }; }
+
+  page.querySelectorAll('.devJ-tip-sel').forEach(el => {
+    el.addEventListener('change', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ[parseInt(e.target.dataset.idx)].tip = e.target.value;
+      onMonthChanged(e.target.dataset.mid);
+    });
+  });
+
+  page.querySelectorAll('.devJ-datum-inp').forEach(el => {
+    el.addEventListener('change', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ[parseInt(e.target.dataset.idx)].datum = e.target.value;
+      saveState();
+    });
+  });
+
+  page.querySelectorAll('.devJ-dinari-inp').forEach(el => {
+    el.addEventListener('change', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ[parseInt(e.target.dataset.idx)].dinari = e.target.value;
+      onMonthChanged(e.target.dataset.mid);
+    });
+  });
+
+  page.querySelectorAll('.devJ-evri-inp').forEach(el => {
+    el.addEventListener('change', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ[parseInt(e.target.dataset.idx)].evri = e.target.value;
+      onMonthChanged(e.target.dataset.mid);
+    });
+  });
+
+  page.querySelectorAll('.devJ-add-btn').forEach(el => {
+    el.addEventListener('click', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ.push(blankDevJ());
+      onMonthChanged(e.target.dataset.mid);
+    });
+  });
+
+  page.querySelectorAll('.devJ-del-btn').forEach(el => {
+    el.addEventListener('click', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      month.devizeJ.splice(parseInt(e.target.dataset.idx), 1);
+      onMonthChanged(e.target.dataset.mid);
     });
   });
 }
