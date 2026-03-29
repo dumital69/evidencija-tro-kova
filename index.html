@@ -1097,17 +1097,20 @@ function buildMonthHTML(m) {
 
   // Sekcija J - Devize (kupovina/prodaja/dizanje)
   const devJ = m.devizeJ || [];
+  const KURS_DEFAULT = 117;
   const devJRowsHTML = devJ.map((r, ri) => {
     const tipColor = r.tip === 'Kupovina' ? '#f76060' : r.tip === 'Prodaja' ? '#3ecfa0' : '#f7c948';
+    const dinDisabled = r.tip === 'Dizanje' ? 'style="text-align:right;opacity:0.4;pointer-events:none;"' : 'style="text-align:right;"';
     return `
-      <div class="devizeJ-row">
+      <div class="sek-row" style="grid-template-columns:40px 1fr 110px 110px 80px 110px 36px;">
         <div class="row-num">${ri + 1}</div>
         <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor}">
           ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
         </select>
         <input type="date" class="sek-input devJ-datum-inp" data-mid="${m.id}" data-idx="${ri}" value="${r.datum || ''}">
-        <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" style="text-align:right;${r.tip === 'Dizanje' ? 'opacity:0.4;pointer-events:none;' : ''}">
-        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 €" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7">
+        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 €" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7" title="Unesite iznos u evrima">
+        <input class="sek-input devJ-kurs-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="${KURS_DEFAULT}" value="${r.kurs || ''}" style="text-align:right;color:var(--text-dim);font-size:0.75rem;" title="Kurs (možete izmeniti)">
+        <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" ${dinDisabled} title="Dinarska vrednost (možete ručno izmeniti)">
         <button class="del-row-btn devJ-del-btn" data-mid="${m.id}" data-idx="${ri}" title="Obriši">✕</button>
       </div>`;
   }).join('');
@@ -1119,26 +1122,32 @@ function buildMonthHTML(m) {
     if (r.tip === 'Dizanje') return a - eur;
     return a;
   }, 0);
-  const devJTotalDin = devJ.reduce((a, r) => {
-    if (r.tip === 'Dizanje') return a;
-    return a + parseNum(r.dinari);
+  // Neto uticaj na dinare: kupovina oduzima, prodaja dodaje
+  const devJNetDin = devJ.reduce((a, r) => {
+    const din = parseNum(r.dinari);
+    if (r.tip === 'Kupovina') return a - din;
+    if (r.tip === 'Prodaja') return a + din;
+    return a;
   }, 0);
 
+  const devJNetDinColor = devJNetDin >= 0 ? '#3ecfa0' : '#f76060';
+
   let devizeJHTML = `
-    <div class="devizeJ-sekcija">
-      <div class="devizeJ-header">
+    <div class="sekcija" style="border-color:#4f8ef755;">
+      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 1fr 110px 110px 80px 110px 36px;">
         <span class="slovo" style="background:#4f8ef7;color:#000">J</span>
-        <span style="color:#4f8ef7">Kupovina deviza</span>
+        <span style="color:#4f8ef7">Devize</span>
         <span style="color:var(--text-dim)">Datum</span>
-        <span style="color:var(--text-dim);text-align:right">Iznos (RSD)</span>
         <span style="color:var(--text-dim);text-align:right">Iznos (€)</span>
+        <span style="color:var(--text-dim);text-align:right">Kurs</span>
+        <span style="color:var(--text-dim);text-align:right">Iznos (RSD)</span>
         <span></span>
       </div>
       ${devJRowsHTML}
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--border);background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:8px;">
         <button class="add-row-btn devJ-add-btn" data-mid="${m.id}" title="Dodaj red">＋</button>
-        <div style="display:flex;gap:20px;align-items:center;">
-          <span style="font-size:0.8rem;color:var(--text-dim)">Utrošeno RSD: <strong style="color:var(--yellow)">${fmt(devJTotalDin)}</strong></span>
+        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:0.8rem;color:var(--text-dim)">Neto RSD: <strong style="color:${devJNetDinColor}">${devJNetDin >= 0 ? '+' : ''}${fmt(devJNetDin)}</strong></span>
           <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#4f8ef7">${fmt(devJTotalEvri)} €</span>
         </div>
       </div>
@@ -1159,6 +1168,21 @@ function buildMonthHTML(m) {
       <div class="zbir-item"><label>Razlika</label><div class="zbir-val ${c.razlika>=0?'razlika-pozitivna':'razlika-negativna'}">${fmt(c.razlika)}</div></div>
     </div>`;
 
+  // Stanje evra kartica - ispod J, iznad grafikona
+  const stanjeEvraColor = c.stanjeEvra >= 0 ? '#4f8ef7' : '#f76060';
+  let stanjeEvraHTML = `
+    <div style="background:var(--surface);border:2px solid #4f8ef7;border-radius:10px;padding:16px 24px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">💶 Stanje evra na računu (ovaj mesec)</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:${stanjeEvraColor}">${fmt(c.stanjeEvra)} €</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        ${devJ.filter(r=>r.tip==='Kupovina'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f76060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Kupljeno</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f76060">+${fmt(devJ.filter(r=>r.tip==='Kupovina').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+        ${devJ.filter(r=>r.tip==='Prodaja'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#3ecfa0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Prodato</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#3ecfa0">-${fmt(devJ.filter(r=>r.tip==='Prodaja').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+        ${devJ.filter(r=>r.tip==='Dizanje'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f7c948;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Dignuto</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f7c948">-${fmt(devJ.filter(r=>r.tip==='Dizanje').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+      </div>
+    </div>`;
+
   // GRAFIKON
   const daysInMonth = getDaysInMonth(m.mesec, parseInt(m.godina));
   const chartId = 'chart_' + m.id;
@@ -1173,7 +1197,7 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  return summaryHTML + uplateHTML + sekHTML + devizeJHTML + zbirHTML + grafikonHTML;
+  return summaryHTML + uplateHTML + sekHTML + devizeJHTML + stanjeEvraHTML + zbirHTML + grafikonHTML;
 }
 
 function getDaysInMonth(mesec, godina) {
@@ -1572,7 +1596,27 @@ function attachListeners(m) {
     el.addEventListener('change', e => {
       const month = getMonth(e.target.dataset.mid);
       if (!month.devizeJ) month.devizeJ = [];
-      month.devizeJ[parseInt(e.target.dataset.idx)].evri = e.target.value;
+      const row = month.devizeJ[parseInt(e.target.dataset.idx)];
+      row.evri = e.target.value;
+      // Auto izračunaj dinare ako kurs postoji
+      const kurs = parseNum(row.kurs) || 117;
+      if (row.tip !== 'Dizanje' && parseNum(row.evri) > 0) {
+        row.dinari = Math.round(parseNum(row.evri) * kurs * 100) / 100;
+      }
+      onMonthChanged(e.target.dataset.mid);
+    });
+  });
+
+  page.querySelectorAll('.devJ-kurs-inp').forEach(el => {
+    el.addEventListener('change', e => {
+      const month = getMonth(e.target.dataset.mid);
+      if (!month.devizeJ) month.devizeJ = [];
+      const row = month.devizeJ[parseInt(e.target.dataset.idx)];
+      row.kurs = e.target.value;
+      // Preračunaj dinare sa novim kursom
+      if (row.tip !== 'Dizanje' && parseNum(row.evri) > 0) {
+        row.dinari = Math.round(parseNum(row.evri) * parseNum(row.kurs) * 100) / 100;
+      }
       onMonthChanged(e.target.dataset.mid);
     });
   });
