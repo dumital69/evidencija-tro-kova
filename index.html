@@ -997,7 +997,24 @@ function renderContent() {
   state.months.forEach(m => attachListeners(m));
   requestAnimationFrame(() => {
     state.months.forEach(m => drawChart(m));
+    state.months.forEach(m => drawEvraChart(m));
   });
+}
+
+// Računa ukupno stanje evra kroz sve mesece do i uključujući mesec m
+function calcUkupnoEvra(m) {
+  const idx = state.months.indexOf(m);
+  let total = 0;
+  for (let i = 0; i <= idx; i++) {
+    const devJ = state.months[i].devizeJ || [];
+    devJ.forEach(r => {
+      const eur = parseNum(r.evri);
+      if (r.tip === 'Kupovina') total += eur;
+      else if (r.tip === 'Prodaja') total -= eur;
+      else if (r.tip === 'Dizanje') total -= eur;
+    });
+  }
+  return total;
 }
 
 function buildMonthHTML(m) {
@@ -1038,8 +1055,8 @@ function buildMonthHTML(m) {
         <div class="val ${razlikaClass}">${fmt(c.razlika)}</div>
       </div>
       <div class="sum-card" style="border-color:#4f8ef7">
-        <label>💶 Stanje evra (ovaj mesec)</label>
-        <div class="val" style="color:#4f8ef7">${fmt(c.stanjeEvra)} €</div>
+        <label>💶 Stanje evra (ukupno)</label>
+        <div class="val" style="color:#4f8ef7">${fmt(calcUkupnoEvra(m))} €</div>
       </div>
     </div>`;
 
@@ -1102,9 +1119,9 @@ function buildMonthHTML(m) {
     const tipColor = r.tip === 'Kupovina' ? '#f76060' : r.tip === 'Prodaja' ? '#3ecfa0' : '#f7c948';
     const dinDisabled = r.tip === 'Dizanje' ? 'style="text-align:right;opacity:0.4;pointer-events:none;"' : 'style="text-align:right;"';
     return `
-      <div class="sek-row" style="grid-template-columns:40px 1fr 110px 110px 80px 110px 36px;">
+      <div class="sek-row" style="grid-template-columns:40px 100px 120px 110px 80px 110px 36px;">
         <div class="row-num">${ri + 1}</div>
-        <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor}">
+        <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor};font-size:0.75rem;">
           ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
         </select>
         <input type="date" class="sek-input devJ-datum-inp" data-mid="${m.id}" data-idx="${ri}" value="${r.datum || ''}">
@@ -1134,7 +1151,7 @@ function buildMonthHTML(m) {
 
   let devizeJHTML = `
     <div class="sekcija" style="border-color:#4f8ef755;">
-      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 1fr 110px 110px 80px 110px 36px;">
+      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 100px 120px 110px 80px 110px 36px;">
         <span class="slovo" style="background:#4f8ef7;color:#000">J</span>
         <span style="color:#4f8ef7">Devize</span>
         <span style="color:var(--text-dim)">Datum</span>
@@ -1168,18 +1185,19 @@ function buildMonthHTML(m) {
       <div class="zbir-item"><label>Razlika</label><div class="zbir-val ${c.razlika>=0?'razlika-pozitivna':'razlika-negativna'}">${fmt(c.razlika)}</div></div>
     </div>`;
 
-  // Stanje evra kartica - ispod J, iznad grafikona
-  const stanjeEvraColor = c.stanjeEvra >= 0 ? '#4f8ef7' : '#f76060';
+  // Stanje evra kartica - ispod J, iznad grafikona (ukupno svih meseci)
+  const ukupnoEvra = calcUkupnoEvra(m);
+  const stanjeEvraColor = ukupnoEvra >= 0 ? '#4f8ef7' : '#f76060';
   let stanjeEvraHTML = `
     <div style="background:var(--surface);border:2px solid #4f8ef7;border-radius:10px;padding:16px 24px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">💶 Stanje evra na računu (ovaj mesec)</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:${stanjeEvraColor}">${fmt(c.stanjeEvra)} €</div>
+        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">💶 Stanje evra na računu (ukupno)</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:${stanjeEvraColor}">${fmt(ukupnoEvra)} €</div>
       </div>
       <div style="display:flex;gap:24px;flex-wrap:wrap;">
-        ${devJ.filter(r=>r.tip==='Kupovina'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f76060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Kupljeno</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f76060">+${fmt(devJ.filter(r=>r.tip==='Kupovina').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
-        ${devJ.filter(r=>r.tip==='Prodaja'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#3ecfa0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Prodato</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#3ecfa0">-${fmt(devJ.filter(r=>r.tip==='Prodaja').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
-        ${devJ.filter(r=>r.tip==='Dizanje'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f7c948;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Dignuto</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f7c948">-${fmt(devJ.filter(r=>r.tip==='Dizanje').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+        ${devJ.filter(r=>r.tip==='Kupovina'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f76060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Ovaj mesec kupljeno</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f76060">+${fmt(devJ.filter(r=>r.tip==='Kupovina').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+        ${devJ.filter(r=>r.tip==='Prodaja'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#3ecfa0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Ovaj mesec prodato</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#3ecfa0">-${fmt(devJ.filter(r=>r.tip==='Prodaja').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
+        ${devJ.filter(r=>r.tip==='Dizanje'&&parseNum(r.evri)>0).length > 0 ? `<div style="text-align:center"><div style="font-size:0.65rem;color:#f7c948;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Ovaj mesec dignuto</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:#f7c948">-${fmt(devJ.filter(r=>r.tip==='Dizanje').reduce((a,r)=>a+parseNum(r.evri),0))} €</div></div>` : ''}
       </div>
     </div>`;
 
@@ -1197,7 +1215,21 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  return summaryHTML + uplateHTML + sekHTML + devizeJHTML + stanjeEvraHTML + zbirHTML + grafikonHTML;
+  // GRAFIKON EVRA
+  const evraChartId = 'chartEvra_' + m.id;
+  let grafikonEvraHTML = '';
+  if (devJ.some(r => parseNum(r.evri) > 0)) {
+    grafikonEvraHTML = `
+    <div class="grafikon-wrapper" style="margin-top:12px;">
+      <h3>💶 Kretanje evra — ${m.naziv}</h3>
+      <canvas class="grafikon-canvas" id="${evraChartId}" height="180"></canvas>
+      <div class="grafikon-legenda">
+        <div class="legenda-item"><div class="legenda-dot" style="background:#4f8ef7"></div>Stanje evra (kumulativno)</div>
+      </div>
+    </div>`;
+  }
+
+  return summaryHTML + uplateHTML + sekHTML + devizeJHTML + stanjeEvraHTML + zbirHTML + grafikonHTML + grafikonEvraHTML;
 }
 
 function getDaysInMonth(mesec, godina) {
@@ -1420,6 +1452,123 @@ function fmtShort(n) {
   if (Math.abs(n) >= 1000000) return (n/1000000).toFixed(1) + 'M';
   if (Math.abs(n) >= 1000) return (n/1000).toFixed(0) + 'k';
   return n.toFixed(0);
+}
+
+function drawEvraChart(m) {
+  const canvas = document.getElementById('chartEvra_' + m.id);
+  if (!canvas) return;
+  const devJ = m.devizeJ || [];
+  if (!devJ.some(r => parseNum(r.evri) > 0)) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = canvas.parentElement.clientWidth - 40;
+  canvas.width = displayW * dpr;
+  canvas.height = 180 * dpr;
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = '180px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const W = displayW;
+  const H = 180;
+  const PAD_LEFT = 60;
+  const PAD_RIGHT = 20;
+  const PAD_TOP = 16;
+  const PAD_BOTTOM = 30;
+  const chartW = W - PAD_LEFT - PAD_RIGHT;
+  const chartH = H - PAD_TOP - PAD_BOTTOM;
+
+  // Sort devJ by date
+  const sorted = [...devJ].filter(r => parseNum(r.evri) > 0).sort((a, b) => {
+    if (!a.datum) return 1;
+    if (!b.datum) return -1;
+    return a.datum.localeCompare(b.datum);
+  });
+
+  // Build cumulative evra data by day
+  const days = getDaysInMonth(m.mesec, parseInt(m.godina));
+  const evraByDay = new Array(days + 1).fill(0);
+  sorted.forEach(r => {
+    const day = parseDate(r.datum) || 1;
+    const d = Math.min(Math.max(day, 1), days);
+    const eur = parseNum(r.evri);
+    if (r.tip === 'Kupovina') evraByDay[d] += eur;
+    else if (r.tip === 'Prodaja') evraByDay[d] -= eur;
+    else if (r.tip === 'Dizanje') evraByDay[d] -= eur;
+  });
+
+  let cumEvra = 0;
+  const evraData = [];
+  for (let d = 1; d <= days; d++) {
+    cumEvra += evraByDay[d];
+    evraData.push(cumEvra);
+  }
+
+  const maxVal = Math.max(...evraData, 1);
+  const minVal = Math.min(...evraData, 0);
+  const step = niceStep(maxVal - minVal || maxVal, 5);
+  const yMin = Math.floor(minVal / step) * step;
+  const yMax = Math.ceil(maxVal / step) * step;
+
+  function toX(day) { return PAD_LEFT + ((day - 1) / Math.max(days - 1, 1)) * chartW; }
+  function toY(val) { return PAD_TOP + chartH - ((val - yMin) / Math.max(yMax - yMin, 1)) * chartH; }
+
+  // Background
+  ctx.fillStyle = '#18181f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid + labels
+  ctx.strokeStyle = '#2a2a38';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#7a7a92';
+  ctx.font = '10px DM Mono, monospace';
+  ctx.textAlign = 'right';
+  let y = yMin;
+  while (y <= yMax + 0.001) {
+    const cy = toY(y);
+    ctx.beginPath(); ctx.moveTo(PAD_LEFT, cy); ctx.lineTo(PAD_LEFT + chartW, cy); ctx.stroke();
+    ctx.fillText(y.toFixed(0) + '€', PAD_LEFT - 4, cy + 4);
+    y = Math.round((y + step) * 100) / 100;
+  }
+
+  // X labels
+  ctx.textAlign = 'center';
+  for (let d = 1; d <= days; d++) {
+    if (d === 1 || d % 7 === 0 || d === days) {
+      ctx.fillStyle = '#7a7a92';
+      ctx.fillText(d + '.', toX(d), PAD_TOP + chartH + 16);
+    }
+  }
+
+  // Area fill
+  ctx.beginPath();
+  ctx.moveTo(toX(1), toY(evraData[0]));
+  for (let i = 1; i < days; i++) ctx.lineTo(toX(i + 1), toY(evraData[i]));
+  ctx.lineTo(toX(days), toY(yMin));
+  ctx.lineTo(toX(1), toY(yMin));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(79,142,247,0.12)';
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4f8ef7';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.moveTo(toX(1), toY(evraData[0]));
+  for (let i = 1; i < days; i++) ctx.lineTo(toX(i + 1), toY(evraData[i]));
+  ctx.stroke();
+
+  // Dots at change points
+  for (let i = 0; i < days; i++) {
+    if (evraByDay[i + 1] !== 0) {
+      ctx.beginPath();
+      ctx.arc(toX(i + 1), toY(evraData[i]), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#4f8ef7';
+      ctx.fill();
+    }
+  }
 }
 
 
@@ -1647,7 +1796,7 @@ function rerenderMonth(mid) {
   if (!page) return;
   page.innerHTML = buildMonthHTML(m);
   attachListeners(m);
-  requestAnimationFrame(() => drawChart(m));
+  requestAnimationFrame(() => { drawChart(m); drawEvraChart(m); });
 }
 
 function getMonth(mid) {
