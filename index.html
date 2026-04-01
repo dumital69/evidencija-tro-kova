@@ -1119,13 +1119,15 @@ function buildMonthHTML(m) {
     const tipColor = r.tip === 'Kupovina' ? '#f76060' : r.tip === 'Prodaja' ? '#3ecfa0' : '#f7c948';
     const dinDisabled = r.tip === 'Dizanje' ? 'style="text-align:right;opacity:0.4;pointer-events:none;"' : 'style="text-align:right;"';
     return `
-      <div class="sek-row" style="grid-template-columns:40px 100px 100px 80px 130px 110px 36px;">
+      <div class="sek-row">
         <div class="row-num">${ri + 1}</div>
-        <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor};font-size:0.75rem;">
-          ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
-        </select>
-        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7" title="Iznos u evrima">
-        <input class="sek-input devJ-kurs-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="${KURS_DEFAULT}" value="${r.kurs || ''}" style="text-align:right;color:var(--text-dim);font-size:0.75rem;" title="Kurs">
+        <div style="display:flex;gap:6px;align-items:center;min-width:0;">
+          <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor};font-size:0.75rem;flex-shrink:0;width:90px;">
+            ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+          <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0 €" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7;width:70px;flex-shrink:0;" title="Iznos u evrima">
+          <input class="sek-input devJ-kurs-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="${KURS_DEFAULT}" value="${r.kurs || ''}" style="text-align:right;color:var(--text-dim);font-size:0.75rem;width:55px;flex-shrink:0;" title="Kurs">
+        </div>
         <input type="date" class="sek-input devJ-datum-inp" data-mid="${m.id}" data-idx="${ri}" value="${r.datum || ''}">
         <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" ${dinDisabled} title="Iznos u dinarima">
         <button class="del-row-btn devJ-del-btn" data-mid="${m.id}" data-idx="${ri}" title="Obriši">✕</button>
@@ -1151,11 +1153,9 @@ function buildMonthHTML(m) {
 
   let devizeJHTML = `
     <div class="sekcija" style="border-color:#4f8ef755;">
-      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 100px 100px 80px 130px 110px 36px;">
+      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);">
         <span class="slovo" style="background:#4f8ef7;color:#000">J</span>
-        <span style="color:#4f8ef7">Devize</span>
-        <span style="color:var(--text-dim);text-align:right">Iznos (€)</span>
-        <span style="color:var(--text-dim);text-align:right">Kurs</span>
+        <span style="color:#4f8ef7">Devize &nbsp;<span style="color:var(--text-dim);font-size:0.65rem;">iznos € / kurs</span></span>
         <span style="color:var(--text-dim)">Datum uplate</span>
         <span style="color:var(--text-dim);text-align:right">Iznos (RSD)</span>
         <span></span>
