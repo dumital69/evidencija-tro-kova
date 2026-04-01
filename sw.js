@@ -1,4 +1,4 @@
-const CACHE_NAME = 'evidencija-v3';
+const CACHE_NAME = 'evidencija-v4';
 const ASSETS = [
   './',
   './index.html',
