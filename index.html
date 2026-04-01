@@ -1119,15 +1119,15 @@ function buildMonthHTML(m) {
     const tipColor = r.tip === 'Kupovina' ? '#f76060' : r.tip === 'Prodaja' ? '#3ecfa0' : '#f7c948';
     const dinDisabled = r.tip === 'Dizanje' ? 'style="text-align:right;opacity:0.4;pointer-events:none;"' : 'style="text-align:right;"';
     return `
-      <div class="sek-row" style="grid-template-columns:40px 100px 120px 110px 80px 110px 36px;">
+      <div class="sek-row" style="grid-template-columns:40px 100px 100px 80px 130px 110px 36px;">
         <div class="row-num">${ri + 1}</div>
         <select class="devizeJ-tip-select devJ-tip-sel" data-mid="${m.id}" data-idx="${ri}" style="color:${tipColor};font-size:0.75rem;">
           ${DEVIZE_TIPOVI.map(t => `<option value="${t}" ${r.tip === t ? 'selected' : ''}>${t}</option>`).join('')}
         </select>
+        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7" title="Iznos u evrima">
+        <input class="sek-input devJ-kurs-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="${KURS_DEFAULT}" value="${r.kurs || ''}" style="text-align:right;color:var(--text-dim);font-size:0.75rem;" title="Kurs">
         <input type="date" class="sek-input devJ-datum-inp" data-mid="${m.id}" data-idx="${ri}" value="${r.datum || ''}">
-        <input class="sek-input iznos-input devJ-evri-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 €" value="${r.evri || ''}" style="text-align:right;color:#4f8ef7" title="Unesite iznos u evrima">
-        <input class="sek-input devJ-kurs-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="${KURS_DEFAULT}" value="${r.kurs || ''}" style="text-align:right;color:var(--text-dim);font-size:0.75rem;" title="Kurs (možete izmeniti)">
-        <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" ${dinDisabled} title="Dinarska vrednost (možete ručno izmeniti)">
+        <input class="sek-input iznos-input devJ-dinari-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="0,00 RSD" value="${r.dinari || ''}" ${dinDisabled} title="Iznos u dinarima">
         <button class="del-row-btn devJ-del-btn" data-mid="${m.id}" data-idx="${ri}" title="Obriši">✕</button>
       </div>`;
   }).join('');
@@ -1151,12 +1151,12 @@ function buildMonthHTML(m) {
 
   let devizeJHTML = `
     <div class="sekcija" style="border-color:#4f8ef755;">
-      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 100px 120px 110px 80px 110px 36px;">
+      <div class="sekcija-header" style="background:rgba(79,142,247,0.15);border-bottom:2px solid rgba(79,142,247,0.4);grid-template-columns:40px 100px 100px 80px 130px 110px 36px;">
         <span class="slovo" style="background:#4f8ef7;color:#000">J</span>
         <span style="color:#4f8ef7">Devize</span>
-        <span style="color:var(--text-dim)">Datum</span>
         <span style="color:var(--text-dim);text-align:right">Iznos (€)</span>
         <span style="color:var(--text-dim);text-align:right">Kurs</span>
+        <span style="color:var(--text-dim)">Datum uplate</span>
         <span style="color:var(--text-dim);text-align:right">Iznos (RSD)</span>
         <span></span>
       </div>
@@ -1457,68 +1457,75 @@ function fmtShort(n) {
 function drawEvraChart(m) {
   const canvas = document.getElementById('chartEvra_' + m.id);
   if (!canvas) return;
-  const devJ = m.devizeJ || [];
-  if (!devJ.some(r => parseNum(r.evri) > 0)) return;
+
+  // Provjeri da li ima evra unosa u bilo kom mesecu do ovog
+  const mIdx = state.months.indexOf(m);
+  const hasAny = state.months.slice(0, mIdx + 1).some(mm => (mm.devizeJ||[]).some(r => parseNum(r.evri) > 0));
+  if (!hasAny) return;
 
   const dpr = window.devicePixelRatio || 1;
   const displayW = canvas.parentElement.clientWidth - 40;
   canvas.width = displayW * dpr;
-  canvas.height = 180 * dpr;
+  canvas.height = 200 * dpr;
   canvas.style.width = displayW + 'px';
-  canvas.style.height = '180px';
+  canvas.style.height = '200px';
 
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
   const W = displayW;
-  const H = 180;
-  const PAD_LEFT = 60;
+  const H = 200;
+  const PAD_LEFT = 65;
   const PAD_RIGHT = 20;
   const PAD_TOP = 16;
   const PAD_BOTTOM = 30;
   const chartW = W - PAD_LEFT - PAD_RIGHT;
   const chartH = H - PAD_TOP - PAD_BOTTOM;
 
-  // Sort devJ by date
-  const sorted = [...devJ].filter(r => parseNum(r.evri) > 0).sort((a, b) => {
+  // Sakupi sve transakcije kroz sve mesece do tekućeg, sortirane po datumu
+  const allTransakcije = [];
+  state.months.slice(0, mIdx + 1).forEach(mm => {
+    (mm.devizeJ || []).forEach(r => {
+      if (parseNum(r.evri) > 0) {
+        allTransakcije.push({ datum: r.datum || '', tip: r.tip, evri: parseNum(r.evri), mesec: mm.naziv });
+      }
+    });
+  });
+  allTransakcije.sort((a, b) => {
     if (!a.datum) return 1;
     if (!b.datum) return -1;
     return a.datum.localeCompare(b.datum);
   });
 
-  // Build cumulative evra data by day
-  const days = getDaysInMonth(m.mesec, parseInt(m.godina));
-  const evraByDay = new Array(days + 1).fill(0);
-  sorted.forEach(r => {
-    const day = parseDate(r.datum) || 1;
-    const d = Math.min(Math.max(day, 1), days);
-    const eur = parseNum(r.evri);
-    if (r.tip === 'Kupovina') evraByDay[d] += eur;
-    else if (r.tip === 'Prodaja') evraByDay[d] -= eur;
-    else if (r.tip === 'Dizanje') evraByDay[d] -= eur;
+  if (allTransakcije.length === 0) return;
+
+  // Napravi niz tačaka (datum, kumulativno stanje)
+  let cum = 0;
+  const tacke = [];
+  // Početna tačka
+  tacke.push({ label: '', val: 0 });
+  allTransakcije.forEach(t => {
+    if (t.tip === 'Kupovina') cum += t.evri;
+    else cum -= t.evri;
+    tacke.push({ label: t.datum ? t.datum.slice(5).replace('-', '.') : t.mesec, val: cum });
   });
 
-  let cumEvra = 0;
-  const evraData = [];
-  for (let d = 1; d <= days; d++) {
-    cumEvra += evraByDay[d];
-    evraData.push(cumEvra);
-  }
-
-  const maxVal = Math.max(...evraData, 1);
-  const minVal = Math.min(...evraData, 0);
+  const vals = tacke.map(t => t.val);
+  const maxVal = Math.max(...vals, 1);
+  const minVal = Math.min(...vals, 0);
   const step = niceStep(maxVal - minVal || maxVal, 5);
   const yMin = Math.floor(minVal / step) * step;
   const yMax = Math.ceil(maxVal / step) * step;
 
-  function toX(day) { return PAD_LEFT + ((day - 1) / Math.max(days - 1, 1)) * chartW; }
+  const n = tacke.length;
+  function toX(i) { return PAD_LEFT + (i / Math.max(n - 1, 1)) * chartW; }
   function toY(val) { return PAD_TOP + chartH - ((val - yMin) / Math.max(yMax - yMin, 1)) * chartH; }
 
   // Background
   ctx.fillStyle = '#18181f';
   ctx.fillRect(0, 0, W, H);
 
-  // Grid + labels
+  // Grid + Y labels
   ctx.strokeStyle = '#2a2a38';
   ctx.lineWidth = 1;
   ctx.fillStyle = '#7a7a92';
@@ -1532,44 +1539,47 @@ function drawEvraChart(m) {
     y = Math.round((y + step) * 100) / 100;
   }
 
-  // X labels
+  // X labels — datum svake transakcije
   ctx.textAlign = 'center';
-  for (let d = 1; d <= days; d++) {
-    if (d === 1 || d % 7 === 0 || d === days) {
-      ctx.fillStyle = '#7a7a92';
-      ctx.fillText(d + '.', toX(d), PAD_TOP + chartH + 16);
-    }
-  }
+  ctx.fillStyle = '#7a7a92';
+  tacke.forEach((t, i) => {
+    if (t.label) ctx.fillText(t.label, toX(i), PAD_TOP + chartH + 16);
+  });
 
   // Area fill
   ctx.beginPath();
-  ctx.moveTo(toX(1), toY(evraData[0]));
-  for (let i = 1; i < days; i++) ctx.lineTo(toX(i + 1), toY(evraData[i]));
-  ctx.lineTo(toX(days), toY(yMin));
-  ctx.lineTo(toX(1), toY(yMin));
+  ctx.moveTo(toX(0), toY(tacke[0].val));
+  for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(tacke[i].val));
+  ctx.lineTo(toX(n - 1), toY(yMin));
+  ctx.lineTo(toX(0), toY(yMin));
   ctx.closePath();
   ctx.fillStyle = 'rgba(79,142,247,0.12)';
   ctx.fill();
 
-  // Line
+  // Linija
   ctx.beginPath();
   ctx.strokeStyle = '#4f8ef7';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
-  ctx.moveTo(toX(1), toY(evraData[0]));
-  for (let i = 1; i < days; i++) ctx.lineTo(toX(i + 1), toY(evraData[i]));
+  ctx.moveTo(toX(0), toY(tacke[0].val));
+  for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(tacke[i].val));
   ctx.stroke();
 
-  // Dots at change points
-  for (let i = 0; i < days; i++) {
-    if (evraByDay[i + 1] !== 0) {
-      ctx.beginPath();
-      ctx.arc(toX(i + 1), toY(evraData[i]), 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#4f8ef7';
-      ctx.fill();
-    }
-  }
+  // Tačke + vrednosti
+  tacke.forEach((t, i) => {
+    if (i === 0) return;
+    ctx.beginPath();
+    ctx.arc(toX(i), toY(t.val), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#4f8ef7';
+    ctx.fill();
+    // Vrednost iznad tačke
+    ctx.fillStyle = '#4f8ef7';
+    ctx.font = '9px DM Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.val.toFixed(0) + '€', toX(i), toY(t.val) - 8);
+  });
 }
+
 
 
 function attachListeners(m) {
