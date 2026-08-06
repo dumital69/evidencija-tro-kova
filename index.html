@@ -673,6 +673,156 @@
     width: 12px; height: 4px; border-radius: 2px;
   }
 
+  /* ===== RAČUN PICKER ===== */
+  #racunPickerOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  #racunPickerOverlay.open { display: flex; }
+
+  .racun-picker-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: min(480px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .racun-picker-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .racun-picker-sub {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-bottom: 24px;
+  }
+
+  #racunList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .racun-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .racun-card:hover { border-color: var(--blue); background: rgba(79,142,247,0.08); }
+  .racun-card.activan { border-color: var(--green); }
+
+  .racun-icon { font-size: 1.5rem; }
+
+  .racun-naziv {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  .racun-active-badge {
+    font-size: 0.65rem;
+    background: var(--green);
+    color: #000;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .racun-del-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  .racun-del-btn:hover { color: var(--red); background: rgba(247,96,96,0.12); }
+
+  .racun-novi-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .racun-novi-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    padding: 9px 12px;
+    outline: none;
+  }
+  .racun-novi-input:focus { border-color: var(--blue); }
+
+  .racun-novi-btn {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .racun-novi-btn:hover { opacity: 0.85; }
+
+  /* Header badge za aktivni račun */
+  .racun-header-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    white-space: nowrap;
+  }
+  .racun-header-badge:hover { border-color: var(--blue); }
+  .racun-header-badge .rh-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .racun-header-badge .rh-naziv {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--green);
+  }
+  .racun-header-badge .rh-arrow { color: var(--text-dim); font-size: 0.7rem; }
+
   canvas.grafikon-canvas {
     width: 100%;
     display: block;
@@ -729,8 +879,28 @@
 </head>
 <body>
 
+<!-- RAČUN PICKER OVERLAY -->
+<div id="racunPickerOverlay">
+  <div class="racun-picker-box">
+    <div class="racun-picker-title">🏦 Odaberi račun</div>
+    <div class="racun-picker-sub">Izaberi račun ili dodaj novi</div>
+    <div id="racunList"></div>
+    <div class="racun-novi-row">
+      <input class="racun-novi-input" id="noviRacunInput" placeholder="Naziv novog računa..." maxlength="40">
+      <button class="racun-novi-btn" id="noviRacunBtn">＋ Dodaj</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <h1>💰 Evidencija Troškova</h1>
+  <div id="racunHeaderBadge" class="racun-header-badge" onclick="showRacunPicker()" title="Promeni račun">
+    <div>
+      <div class="rh-label">Račun</div>
+      <div class="rh-naziv" id="activeRacunName">—</div>
+    </div>
+    <span class="rh-arrow">▼</span>
+  </div>
   <div class="header-btns">
     <button class="hbtn hbtn-import" id="importBtn">📂 Uvezi podatke</button>
     <button class="hbtn hbtn-print" id="printBtn">🖨️ Štampaj tab</button>
@@ -797,22 +967,127 @@ const SEKCIJE = [
 // Devize po mesecu - posebna lista, nije u SEKCIJE
 const DEVIZE_TIPOVI = ['Kupovina', 'Prodaja', 'Dizanje'];
 
-// state: { months: [ { id, naziv, prenos, plata, uplate:[{naziv,datum,iznos}], sekcije:{B:[{naziv,datum,iznos}],...} } ] }
+// ===================== MULTI-ACCOUNT =====================
+const RACUNI_KEY = 'evidencija_racuni_v1';
+const OLD_KEY = 'evidencija_troskova_v2';
+
+let racuni = { list: [], activeId: null };
 let state = { months: [], devize: [], stanjeEvra: 0 };
+
+function genRacunId() { return 'r_' + Math.random().toString(36).substr(2,9); }
+
+function fixStateFields(s) {
+  if (!s.devize) s.devize = [];
+  if (s.stanjeEvra === undefined) s.stanjeEvra = 0;
+  s.months.forEach(m => { if (!m.devizeJ) m.devizeJ = []; });
+  return s;
+}
 
 function loadState() {
   try {
-    const s = localStorage.getItem('evidencija_troskova_v2');
-    if (s) state = JSON.parse(s);
-    if (!state.devize) state.devize = [];
-    if (state.stanjeEvra === undefined) state.stanjeEvra = 0;
-    // Ensure all months have devizeJ
-    state.months.forEach(m => { if (!m.devizeJ) m.devizeJ = []; });
-  } catch(e) {}
+    const r = localStorage.getItem(RACUNI_KEY);
+    if (r) {
+      racuni = JSON.parse(r);
+      if (!racuni.list) racuni.list = [];
+      if (racuni.activeId) {
+        const active = racuni.list.find(x => x.id === racuni.activeId);
+        if (active && active.data) {
+          state = fixStateFields(active.data);
+          return;
+        }
+      }
+    } else {
+      // Migracija iz starog formata
+      const old = localStorage.getItem(OLD_KEY);
+      if (old) {
+        const oldData = fixStateFields(JSON.parse(old));
+        const id = genRacunId();
+        racuni = { list: [{ id, naziv: 'Moj račun', data: oldData }], activeId: id };
+        state = oldData;
+        saveState();
+        return;
+      }
+    }
+    // Nema podataka — prikaži picker odmah
+    state = { months: [], devize: [], stanjeEvra: 0 };
+  } catch(e) { console.error(e); }
 }
 
 function saveState() {
-  localStorage.setItem('evidencija_troskova_v2', JSON.stringify(state));
+  const active = racuni.list.find(x => x.id === racuni.activeId);
+  if (active) active.data = state;
+  localStorage.setItem(RACUNI_KEY, JSON.stringify(racuni));
+}
+
+// ===== ACCOUNT MANAGEMENT =====
+function updateRacunHeader() {
+  const el = document.getElementById('activeRacunName');
+  if (!el) return;
+  const active = racuni.list.find(x => x.id === racuni.activeId);
+  el.textContent = active ? active.naziv : '—';
+}
+
+function switchRacun(id) {
+  // Sačuvaj trenutni state
+  const current = racuni.list.find(x => x.id === racuni.activeId);
+  if (current) current.data = state;
+  // Učitaj novi
+  racuni.activeId = id;
+  const active = racuni.list.find(x => x.id === id);
+  if (active && active.data) {
+    state = fixStateFields(active.data);
+  } else {
+    state = { months: [], devize: [], stanjeEvra: 0 };
+    if (active) active.data = state;
+  }
+  saveState();
+  activeTab = 0;
+  updateRacunHeader();
+  hideRacunPicker();
+  render();
+}
+
+function addRacun(naziv) {
+  naziv = naziv.trim();
+  if (!naziv) return;
+  const id = genRacunId();
+  racuni.list.push({ id, naziv, data: { months: [], devize: [], stanjeEvra: 0 } });
+  switchRacun(id);
+}
+
+function deleteRacun(e, id) {
+  e.stopPropagation();
+  if (racuni.list.length <= 1) { alert('Ne možete obrisati jedini račun!'); return; }
+  if (!confirm('Obrisati ovaj račun i sve podatke?')) return;
+  racuni.list = racuni.list.filter(x => x.id !== id);
+  if (racuni.activeId === id) {
+    switchRacun(racuni.list[0].id);
+  } else {
+    saveState();
+    renderRacunPicker();
+  }
+}
+
+function renderRacunPicker() {
+  const list = document.getElementById('racunList');
+  if (!list) return;
+  list.innerHTML = racuni.list.map(r => `
+    <div class="racun-card ${r.id === racuni.activeId ? 'activan' : ''}" onclick="switchRacun('${r.id}')">
+      <div class="racun-icon">🏦</div>
+      <div class="racun-naziv">${r.naziv}</div>
+      ${r.id === racuni.activeId ? '<div class="racun-active-badge">Aktivan</div>' : ''}
+      <button class="racun-del-btn" onclick="deleteRacun(event,'${r.id}')" title="Obriši račun">✕</button>
+    </div>
+  `).join('');
+}
+
+function showRacunPicker() {
+  renderRacunPicker();
+  document.getElementById('racunPickerOverlay').classList.add('open');
+}
+
+function hideRacunPicker() {
+  document.getElementById('racunPickerOverlay').classList.remove('open');
 }
 
 // ===================== HELPERS =====================
@@ -1914,7 +2189,12 @@ function showToast(msg, isError) {
 }
 
 document.getElementById('exportBtn').addEventListener('click', async () => {
-  const dataStr = JSON.stringify(state, null, 2);
+  // Sačuvaj trenutni state u aktivni račun pre exporta
+  const current = racuni.list.find(x => x.id === racuni.activeId);
+  if (current) current.data = state;
+
+  const exportData = { racuni: racuni, version: 2 };
+  const dataStr = JSON.stringify(exportData, null, 2);
   const now = new Date();
   const datum = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
   const fileName = 'evidencija_troskova_' + datum + '.json';
@@ -1959,15 +2239,32 @@ document.getElementById('importFileInput').addEventListener('change', e => {
   reader.onload = evt => {
     try {
       const parsed = JSON.parse(evt.target.result);
-      if (!parsed.months) throw new Error('Neispravan format');
-      if (state.months.length > 0) {
-        if (!confirm('Da li zelite da zamenite sve postojece podatke uvezenim podacima?')) return;
+      if (!confirm('Da li želite da zamenite sve postojeće podatke uvezenim podacima?')) return;
+
+      if (parsed.version === 2 && parsed.racuni) {
+        // Novi format — svi računi
+        racuni = parsed.racuni;
+        if (!racuni.list || racuni.list.length === 0) throw new Error('Nema računa');
+        const active = racuni.list.find(x => x.id === racuni.activeId) || racuni.list[0];
+        racuni.activeId = active.id;
+        state = fixStateFields(active.data);
+      } else if (parsed.months) {
+        // Stari format — uvezi u TRENUTNO AKTIVNI račun
+        const active = racuni.list.find(x => x.id === racuni.activeId);
+        const data = fixStateFields(parsed);
+        if (active) {
+          active.data = data;
+        }
+        state = data;
+      } else {
+        throw new Error('Neispravan format');
       }
-      state = parsed;
+
       sortMonths();
       cascadePrenosFrom(1);
       activeTab = 0;
       saveState();
+      updateRacunHeader();
       render();
       showToast('✅ Podaci uspešno uvezeni!');
     } catch(err) {
@@ -2154,6 +2451,30 @@ function hideDevizePage() {
 
 // ===================== INIT =====================
 loadState();
+
+// Novi račun dugme
+document.getElementById('noviRacunBtn').addEventListener('click', () => {
+  const inp = document.getElementById('noviRacunInput');
+  if (inp.value.trim()) { addRacun(inp.value); inp.value = ''; }
+});
+document.getElementById('noviRacunInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('noviRacunBtn').click();
+});
+
+// Klik van picker boxa zatvori picker (samo ako ima računa)
+document.getElementById('racunPickerOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('racunPickerOverlay') && racuni.activeId) {
+    hideRacunPicker();
+  }
+});
+
+// Ažuriraj header naziv
+updateRacunHeader();
+
+// Ako nema računa — prikaži picker odmah
+if (racuni.list.length === 0) {
+  showRacunPicker();
+}
 
 // Devize tab dugme
 document.getElementById('devizeTabBtn').addEventListener('click', () => {
