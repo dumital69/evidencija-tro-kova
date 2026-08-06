@@ -1002,7 +1002,7 @@ function loadState() {
       if (old) {
         const oldData = fixStateFields(JSON.parse(old));
         const id = genRacunId();
-        racuni = { list: [{ id, naziv: 'Moj račun', data: oldData }], activeId: id };
+        racuni = { list: [{ id, naziv: 'Yettel Bank', data: oldData }], activeId: id };
         state = oldData;
         saveState();
         return;
