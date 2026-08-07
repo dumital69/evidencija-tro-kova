@@ -666,210 +666,9 @@
   .legenda-dot {
     width: 12px; height: 4px; border-radius: 2px;
   }
-
-  #racunPickerOverlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-  }
-  #racunPickerOverlay.open { display: flex; }
-
-  .racun-picker-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    width: min(480px, 95vw);
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .racun-picker-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.4rem;
-    color: var(--text);
-    margin-bottom: 8px;
-  }
-
-  .racun-picker-sub {
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    margin-bottom: 24px;
-  }
-
-  #racunList {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .racun-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-  }
-  .racun-card:hover { border-color: var(--blue); background: rgba(79,142,247,0.08); }
-  .racun-card.activan { border-color: var(--green); }
-
-  .racun-icon { font-size: 1.5rem; }
-
-  .racun-naziv {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    flex: 1;
-  }
-
-  .racun-active-badge {
-    font-size: 0.65rem;
-    background: var(--green);
-    color: #000;
-    border-radius: 4px;
-    padding: 2px 7px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .racun-del-btn {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 4px 6px;
-    border-radius: 4px;
-    line-height: 1;
-  }
-  .racun-del-btn:hover { color: var(--red); background: rgba(247,96,96,0.12); }
-
-  .racun-novi-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-  }
-
-  .racun-novi-input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.88rem;
-    padding: 9px 12px;
-    outline: none;
-  }
-  .racun-novi-input:focus { border-color: var(--blue); }
-
-  .racun-novi-btn {
-    background: var(--blue);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-  }
-  .racun-novi-btn:hover { opacity: 0.85; }
-
-  .racun-header-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 5px 12px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-    white-space: nowrap;
-  }
-  .racun-header-badge:hover { border-color: var(--blue); }
-  .racun-header-badge .rh-label {
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .racun-header-badge .rh-naziv {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.88rem;
-    color: var(--green);
-  }
-  .racun-header-badge .rh-arrow { color: var(--text-dim); font-size: 0.7rem; }
-
-  canvas.grafikon-canvas {
-    width: 100%;
-    display: block;
-  }
-
-  .devizeJ-sekcija {
-    background: var(--surface);
-    border: 1px solid #4f8ef755;
-    border-radius: 10px;
-    margin-bottom: 18px;
-    overflow: hidden;
-  }
-  .devizeJ-header {
-    display: grid;
-    grid-template-columns: 40px 1fr 120px 120px 120px 36px;
-    gap: 8px;
-    padding: 10px 14px;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #fff;
-    font-weight: 600;
-    align-items: center;
-    background: rgba(79,142,247,0.15);
-    border-bottom: 2px solid rgba(79,142,247,0.4);
-  }
-  .devizeJ-row {
-    display: grid;
-    grid-template-columns: 40px 1fr 120px 120px 120px 36px;
-    gap: 8px;
-    padding: 6px 14px;
-    border-top: 1px solid var(--border);
-    align-items: center;
-  }
-  .devizeJ-row:hover { background: var(--surface2); }
-  .devizeJ-tip-select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.82rem;
-    padding: 4px 6px;
-    width: 100%;
-    outline: none;
-    cursor: pointer;
-  }
-  .devizeJ-tip-select:focus { border-color: #4f8ef7; }
-  .tip-kupovina { color: #f76060; }
-  .tip-prodaja { color: #3ecfa0; }
-  .tip-dizanje { color: #f7c948; }
 </style>
 </head>
 <body>
-
 <div id="racunPickerOverlay">
   <div class="racun-picker-box">
     <div class="racun-picker-title">🏦 Odaberi račun</div>
@@ -1190,7 +989,6 @@ function getSavedTab(accountId) {
 function saveActiveTab(accountId, tabIndex) {
     localStorage.setItem('activeTab_' + accountId, tabIndex);
 }
-
 let activeTab = 0;
 
 function render() {
@@ -1544,14 +1342,11 @@ function buildChartData(m) {
   }
 
   return { days, balanceData, prihodiData, troškoviData };
-}
-
-function drawChart(m) {
+}function drawChart(m) {
   const canvas = document.getElementById('chart_' + m.id);
   if (!canvas) return;
 
   const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
   const displayW = canvas.parentElement.clientWidth - 40;
   canvas.width = displayW * dpr;
   canvas.height = 300 * dpr;
@@ -2034,9 +1829,7 @@ function onMonthChanged(mid) {
   for (let i = idx; i < state.months.length; i++) {
     rerenderMonth(state.months[i].id);
   }
-}
-
-// ===================== TABS / MONTHS =====================
+}// ===================== TABS / MONTHS =====================
 function deleteMonth(e, mid) {
   e.stopPropagation();
   if (!confirm('Obrisati ovaj mesec?')) return;
