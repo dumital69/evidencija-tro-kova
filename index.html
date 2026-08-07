@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Evidencija Troškova v2</title>
+<title>Evidencija Troškova</title>
 <meta name="description" content="Evidencija uplata i troškova po mesecima">
 <meta name="theme-color" content="#0f0f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,6 +51,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-wrap: wrap;
   }
 
   header h1 {
@@ -59,12 +60,13 @@
     font-size: 1.2rem;
     color: var(--text);
     flex: 1;
+    min-width: 150px;
   }
 
   .header-btns {
     display: flex;
     gap: 8px;
-    margin-left: auto;
+    flex-wrap: wrap;
   }
 
   .hbtn {
@@ -79,24 +81,23 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
+    background: var(--surface2);
+    color: var(--text);
   }
 
   .hbtn-export {
-    background: var(--surface2);
     color: var(--green);
     border-color: var(--green);
   }
   .hbtn-export:hover { background: var(--green); color: #000; }
 
   .hbtn-import {
-    background: var(--surface2);
     color: var(--blue);
     border-color: var(--blue);
   }
   .hbtn-import:hover { background: var(--blue); color: #fff; }
 
   .hbtn-print {
-    background: var(--surface2);
     color: var(--purple);
     border-color: var(--purple);
   }
@@ -145,7 +146,6 @@
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.error { border-color: var(--red); color: var(--red); }
 
-  /* Date input styling */
   input[type="date"].sek-input,
   input[type="date"].uplata-datum-inp {
     color-scheme: dark;
@@ -225,7 +225,6 @@
   .month-page { display: none; }
   .month-page.active { display: block; }
 
-  /* SUMMARY */
   .summary-bar {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -268,7 +267,6 @@
     padding: 2px 0;
   }
 
-  /* SEKCIJE */
   .sekcija {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -396,7 +394,6 @@
   .sek-row:hover .del-row-btn { color: var(--text-dim); }
   .del-row-btn:hover { color: var(--red) !important; background: rgba(247,96,96,0.1); }
 
-  /* UPLATA SEKCIJA */
   .uplata-sekcija {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -428,7 +425,6 @@
   }
   .uplata-row:hover { background: var(--surface2); }
 
-  /* DONJI ZBIR */
   .zbir-bar {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -460,7 +456,6 @@
   .razlika-pozitivna { color: var(--green); }
   .razlika-negativna { color: var(--red); }
 
-  /* Modal za novi mesec */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -533,7 +528,6 @@
     .summary-bar { grid-template-columns: repeat(2, 1fr); }
   }
 
-  /* DEVIZE */
   #devizePage { display: none; }
   #devizePage.active { display: block; }
 
@@ -673,7 +667,6 @@
     width: 12px; height: 4px; border-radius: 2px;
   }
 
-  /* ===== RAČUN PICKER ===== */
   #racunPickerOverlay {
     display: none;
     position: fixed;
@@ -795,7 +788,6 @@
   }
   .racun-novi-btn:hover { opacity: 0.85; }
 
-  /* Header badge za aktivni račun */
   .racun-header-badge {
     display: flex;
     align-items: center;
@@ -828,7 +820,6 @@
     display: block;
   }
 
-  /* DEVIZE-J sekcija u mesecu */
   .devizeJ-sekcija {
     background: var(--surface);
     border: 1px solid #4f8ef755;
@@ -879,7 +870,6 @@
 </head>
 <body>
 
-<!-- RAČUN PICKER OVERLAY -->
 <div id="racunPickerOverlay">
   <div class="racun-picker-box">
     <div class="racun-picker-title">🏦 Odaberi račun</div>
@@ -921,11 +911,8 @@
   </div>
 </div>
 
-<div class="content" id="devizePage">
-  <!-- Rendered by JS -->
-</div>
+<div class="content" id="devizePage"></div>
 
-<!-- Modal za novi mesec -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h2>Novi Mesec</h2>
@@ -964,7 +951,6 @@ const SEKCIJE = [
   { id: 'I', naziv: 'Razno', boja: '#aaaaaa', textBoja: '#000', defaultReds: 5 },
 ];
 
-// Devize po mesecu - posebna lista, nije u SEKCIJE
 const DEVIZE_TIPOVI = ['Kupovina', 'Prodaja', 'Dizanje'];
 
 // ===================== MULTI-ACCOUNT =====================
@@ -997,18 +983,16 @@ function loadState() {
         }
       }
     } else {
-      // Migracija iz starog formata
       const old = localStorage.getItem(OLD_KEY);
       if (old) {
         const oldData = fixStateFields(JSON.parse(old));
         const id = genRacunId();
-        racuni = { list: [{ id, naziv: 'Yettel Bank', data: oldData }], activeId: id };
+        racuni = { list: [{ id, naziv: 'Moj račun', data: oldData }], activeId: id };
         state = oldData;
         saveState();
         return;
       }
     }
-    // Nema podataka — prikaži picker odmah
     state = { months: [], devize: [], stanjeEvra: 0 };
   } catch(e) { console.error(e); }
 }
@@ -1019,7 +1003,6 @@ function saveState() {
   localStorage.setItem(RACUNI_KEY, JSON.stringify(racuni));
 }
 
-// ===== ACCOUNT MANAGEMENT =====
 function updateRacunHeader() {
   const el = document.getElementById('activeRacunName');
   if (!el) return;
@@ -1028,10 +1011,8 @@ function updateRacunHeader() {
 }
 
 function switchRacun(id) {
-  // Sačuvaj trenutni state
   const current = racuni.list.find(x => x.id === racuni.activeId);
   if (current) current.data = state;
-  // Učitaj novi
   racuni.activeId = id;
   const active = racuni.list.find(x => x.id === id);
   if (active && active.data) {
@@ -1041,7 +1022,7 @@ function switchRacun(id) {
     if (active) active.data = state;
   }
   saveState();
-  activeTab = 0;
+  activeTab = getSavedTab(id);
   updateRacunHeader();
   hideRacunPicker();
   render();
@@ -1090,7 +1071,6 @@ function hideRacunPicker() {
   document.getElementById('racunPickerOverlay').classList.remove('open');
 }
 
-// ===================== HELPERS =====================
 function fmt(n) {
   if (!n && n !== 0) return '0,00';
   return Number(n).toLocaleString('sr-RS', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1098,21 +1078,13 @@ function fmt(n) {
 
 function parseNum(s) {
   if (s === null || s === undefined || s === '') return 0;
-  // If already a number, return it directly
   if (typeof s === 'number') return s;
   const str = String(s).trim();
-  // Serbian format: dots as thousands separator, comma as decimal
-  // e.g. "1.171.335,00" or "3.499" or "2952,89" or "3499"
-  // Remove thousands dots only if there's a comma as decimal separator
-  // or if dots appear in thousands position
   if (str.includes(',')) {
-    // Serbian: 1.171.335,00 -> remove dots -> 1171335,00 -> replace comma -> 1171335.00
     return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
   } else if ((str.match(/\./g) || []).length > 1) {
-    // Multiple dots = thousands separators: 1.171.335 -> 1171335
     return parseFloat(str.replace(/\./g, '')) || 0;
   } else {
-    // Single dot or no dot: treat as decimal point (e.g. "116533.5" or "3499")
     return parseFloat(str) || 0;
   }
 }
@@ -1141,11 +1113,9 @@ function blankMonth(mesec, godina, prenosi, prevMonth) {
   const sek = {};
   SEKCIJE.forEach(s => {
     if (prevMonth && prevMonth.sekcije[s.id]) {
-      // Copy only rows that have a name filled in
       const prevRows = prevMonth.sekcije[s.id].filter(r => r.naziv && r.naziv.trim() !== '');
       if (prevRows.length > 0) {
         sek[s.id] = prevRows.map(r => ({ id: genId(), naziv: r.naziv, datum: '', iznos: '' }));
-        // Always add one empty row at the end for new entries
         sek[s.id].push(blankRow());
       } else {
         sek[s.id] = Array.from({length: s.defaultReds}, blankRow);
@@ -1155,7 +1125,6 @@ function blankMonth(mesec, godina, prenosi, prevMonth) {
     }
   });
 
-  // Copy uplata names from previous month too
   let uplate = [blankRow()];
   if (prevMonth && prevMonth.uplate) {
     const prevUplate = prevMonth.uplate.filter(r => r.naziv && r.naziv.trim() !== '');
@@ -1177,19 +1146,17 @@ function blankMonth(mesec, godina, prenosi, prevMonth) {
   };
 }
 
-// ===================== CALCULATIONS =====================
 function calcMonth(m) {
   const prenos = parseNum(m.prenos);
   const plata = parseNum(m.plata);
   const ukUplata = m.uplate.reduce((a, r) => a + parseNum(r.iznos), 0);
 
-  // Devize J uticaj na dinare
   const devJ = m.devizeJ || [];
   const devDinUticaj = devJ.reduce((a, r) => {
     const din = parseNum(r.dinari);
-    if (r.tip === 'Kupovina') return a - din; // kupovina evra = oduzimamo dinare
-    if (r.tip === 'Prodaja') return a + din;  // prodaja evra = dodajemo dinare
-    return a; // dizanje nema uticaja na dinare
+    if (r.tip === 'Kupovina') return a - din;
+    if (r.tip === 'Prodaja') return a + din;
+    return a;
   }, 0);
 
   const totalUplata = prenos + plata + ukUplata + devDinUticaj;
@@ -1202,7 +1169,6 @@ function calcMonth(m) {
     totalTroskovi += t;
   });
 
-  // Stanje evra na računu - sabira sve kupovine, oduzima prodaje i dizanja
   const stanjeEvra = devJ.reduce((a, r) => {
     const eur = parseNum(r.evri);
     if (r.tip === 'Kupovina') return a + eur;
@@ -1215,16 +1181,36 @@ function calcMonth(m) {
   return { prenos, plata, ukUplata, devDinUticaj, totalUplata, troskovi, totalTroskovi, razlika, stanjeEvra };
 }
 
-// ===================== RENDER =====================
+// ===== PAMĆENJE AKTIVNOG TABA =====
+function getSavedTab(accountId) {
+    const saved = localStorage.getItem('activeTab_' + accountId);
+    return saved ? parseInt(saved) : 0;
+}
+
+function saveActiveTab(accountId, tabIndex) {
+    localStorage.setItem('activeTab_' + accountId, tabIndex);
+}
+
+let activeTab = 0;
+
 function render() {
   if (devizePageActive) return;
+  
+  if (racuni.activeId) {
+    const saved = getSavedTab(racuni.activeId);
+    if (saved < state.months.length) {
+      activeTab = saved;
+    } else {
+      activeTab = Math.max(0, state.months.length - 1);
+    }
+  }
+  
   renderTabs();
   renderContent();
 }
 
 function renderTabs() {
   const wrapper = document.getElementById('tabsWrapper');
-  // keep add button
   const addBtn = document.getElementById('addMonthBtn');
   wrapper.innerHTML = '';
 
@@ -1235,6 +1221,7 @@ function renderTabs() {
     tab.addEventListener('click', (e) => {
       if (e.target.classList.contains('tab-del')) return;
       activeTab = idx;
+      saveActiveTab(racuni.activeId, idx);
       render();
     });
     wrapper.appendChild(tab);
@@ -1242,7 +1229,6 @@ function renderTabs() {
 
   wrapper.appendChild(addBtn);
 
-  // Skroluj aktivni tab u vidno polje
   requestAnimationFrame(() => {
     const activeTabEl = wrapper.querySelector('.tab.active');
     if (activeTabEl) {
@@ -1268,7 +1254,6 @@ function renderContent() {
     content.appendChild(page);
   });
 
-  // attach listeners after render
   state.months.forEach(m => attachListeners(m));
   requestAnimationFrame(() => {
     state.months.forEach(m => drawChart(m));
@@ -1276,7 +1261,6 @@ function renderContent() {
   });
 }
 
-// Računa ukupno stanje evra kroz sve mesece do i uključujući mesec m
 function calcUkupnoEvra(m) {
   const idx = state.months.indexOf(m);
   let total = 0;
@@ -1295,7 +1279,6 @@ function calcUkupnoEvra(m) {
 function buildMonthHTML(m) {
   const c = calcMonth(m);
 
-  // Summary bar
   const razlikaClass = c.razlika >= 0 ? 'razlika-pozitivna' : 'razlika-negativna';
   let summaryHTML = `
     <div class="summary-bar">
@@ -1335,7 +1318,6 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  // Uplate sekcija
   let uplateRows = m.uplate.map((r, ri) => `
     <div class="uplata-row">
       <input class="sek-input uplata-naziv-inp" data-mid="${m.id}" data-idx="${ri}" placeholder="Opis uplate..." value="${r.naziv}">
@@ -1357,7 +1339,6 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  // Sekcije troškova
   let sekHTML = '';
   SEKCIJE.forEach(s => {
     const rows = m.sekcije[s.id] || [];
@@ -1387,7 +1368,6 @@ function buildMonthHTML(m) {
       </div>`;
   });
 
-  // Sekcija J - Devize (kupovina/prodaja/dizanje)
   const devJ = m.devizeJ || [];
   const KURS_DEFAULT = 117;
   const devJRowsHTML = devJ.map((r, ri) => {
@@ -1416,14 +1396,12 @@ function buildMonthHTML(m) {
     if (r.tip === 'Dizanje') return a - eur;
     return a;
   }, 0);
-  // Neto uticaj na dinare: kupovina oduzima, prodaja dodaje
   const devJNetDin = devJ.reduce((a, r) => {
     const din = parseNum(r.dinari);
     if (r.tip === 'Kupovina') return a - din;
     if (r.tip === 'Prodaja') return a + din;
     return a;
   }, 0);
-
   const devJNetDinColor = devJNetDin >= 0 ? '#3ecfa0' : '#f76060';
 
   let devizeJHTML = `
@@ -1445,7 +1423,6 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  // Zbir bar dole
   let zbirHTML = `
     <div class="zbir-bar">
       <div class="zbir-item"><label>Mobilni/Prepaid</label><div class="zbir-val" style="color:#f7c948">${fmt(c.troskovi['B'])}</div></div>
@@ -1460,7 +1437,6 @@ function buildMonthHTML(m) {
       <div class="zbir-item"><label>Razlika</label><div class="zbir-val ${c.razlika>=0?'razlika-pozitivna':'razlika-negativna'}">${fmt(c.razlika)}</div></div>
     </div>`;
 
-  // Stanje evra kartica - ispod J, iznad grafikona (ukupno svih meseci)
   const ukupnoEvra = calcUkupnoEvra(m);
   const stanjeEvraColor = ukupnoEvra >= 0 ? '#4f8ef7' : '#f76060';
   let stanjeEvraHTML = `
@@ -1476,7 +1452,6 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  // GRAFIKON
   const daysInMonth = getDaysInMonth(m.mesec, parseInt(m.godina));
   const chartId = 'chart_' + m.id;
   let grafikonHTML = `
@@ -1490,7 +1465,6 @@ function buildMonthHTML(m) {
       </div>
     </div>`;
 
-  // GRAFIKON EVRA
   const evraChartId = 'chartEvra_' + m.id;
   let grafikonEvraHTML = '';
   if (devJ.some(r => parseNum(r.evri) > 0)) {
@@ -1518,11 +1492,10 @@ function getDaysInMonth(mesec, godina) {
 }
 
 function parseDate(dateStr) {
-  // expects YYYY-MM-DD from date input
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (isNaN(d)) return null;
-  return d.getDate(); // returns day of month 1-31
+  return d.getDate();
 }
 
 function buildChartData(m) {
@@ -1530,11 +1503,9 @@ function buildChartData(m) {
   const prihodi = new Array(days + 1).fill(0);
   const troskovi = new Array(days + 1).fill(0);
 
-  // Plata and prenos on day 1 if no date, else on their date
   const prenos = parseNum(m.prenos);
   const plata = parseNum(m.plata);
 
-  // Uplate
   m.uplate.forEach(r => {
     const iznos = parseNum(r.iznos);
     if (!iznos) return;
@@ -1543,12 +1514,9 @@ function buildChartData(m) {
     prihodi[d] += iznos;
   });
 
-  // Add plata — use day 1 if not specified (plata has no date field)
   prihodi[1] += plata;
-  // Prenos always on day 1
   prihodi[1] += prenos;
 
-  // Sekcije (troškovi)
   Object.values(m.sekcije).forEach(rows => {
     rows.forEach(r => {
       const iznos = parseNum(r.iznos);
@@ -1559,7 +1527,6 @@ function buildChartData(m) {
     });
   });
 
-  // Build cumulative balance line
   let balance = 0;
   const balanceData = [];
   const prihodiData = [];
@@ -1605,12 +1572,10 @@ function drawChart(m) {
 
   const { days, balanceData, prihodiData, troškoviData } = buildChartData(m);
 
-  // Find Y range
   const allVals = [...balanceData, ...prihodiData, ...troškoviData];
   const maxVal = Math.max(...allVals, 5000);
   const minVal = Math.min(...allVals, 0);
 
-  // Round max up to nice number
   const step = niceStep(maxVal - minVal, 8);
   const yMin = Math.floor(minVal / step) * step;
   const yMax = Math.ceil(maxVal / step) * step;
@@ -1622,11 +1587,9 @@ function drawChart(m) {
     return PAD_TOP + chartH - ((val - yMin) / (yMax - yMin)) * chartH;
   }
 
-  // Background
   ctx.fillStyle = '#18181f';
   ctx.fillRect(0, 0, W, H);
 
-  // Grid lines + Y labels
   ctx.strokeStyle = '#2a2a38';
   ctx.lineWidth = 1;
   ctx.fillStyle = '#7a7a92';
@@ -1644,7 +1607,6 @@ function drawChart(m) {
     y = Math.round((y + step) * 100) / 100;
   }
 
-  // Zero line
   if (yMin < 0 && yMax > 0) {
     ctx.strokeStyle = '#555570';
     ctx.lineWidth = 1.5;
@@ -1654,7 +1616,6 @@ function drawChart(m) {
     ctx.stroke();
   }
 
-  // X axis labels (every ~7 days)
   ctx.strokeStyle = '#2a2a38';
   ctx.lineWidth = 1;
   ctx.fillStyle = '#7a7a92';
@@ -1671,7 +1632,6 @@ function drawChart(m) {
     }
   }
 
-  // Draw area under balance line
   ctx.beginPath();
   ctx.moveTo(toX(1), toY(balanceData[0]));
   for (let i = 1; i < days; i++) {
@@ -1683,7 +1643,6 @@ function drawChart(m) {
   ctx.fillStyle = 'rgba(63,207,160,0.08)';
   ctx.fill();
 
-  // Draw prihodi line
   function drawLine(data, color, width) {
     ctx.beginPath();
     ctx.strokeStyle = color;
@@ -1700,7 +1659,6 @@ function drawChart(m) {
   drawLine(troškoviData, '#f76060', 1.5);
   drawLine(balanceData, '#3ecfa0', 2.5);
 
-  // Dots at data points with values
   for (let i = 0; i < days; i++) {
     const d = i + 1;
     const hasData = balanceData[i] !== (i > 0 ? balanceData[i-1] : 0);
@@ -1733,7 +1691,6 @@ function drawEvraChart(m) {
   const canvas = document.getElementById('chartEvra_' + m.id);
   if (!canvas) return;
 
-  // Provjeri da li ima evra unosa u bilo kom mesecu do ovog
   const mIdx = state.months.indexOf(m);
   const hasAny = state.months.slice(0, mIdx + 1).some(mm => (mm.devizeJ||[]).some(r => parseNum(r.evri) > 0));
   if (!hasAny) return;
@@ -1757,7 +1714,6 @@ function drawEvraChart(m) {
   const chartW = W - PAD_LEFT - PAD_RIGHT;
   const chartH = H - PAD_TOP - PAD_BOTTOM;
 
-  // Sakupi sve transakcije kroz sve mesece do tekućeg, sortirane po datumu
   const allTransakcije = [];
   state.months.slice(0, mIdx + 1).forEach(mm => {
     (mm.devizeJ || []).forEach(r => {
@@ -1774,10 +1730,8 @@ function drawEvraChart(m) {
 
   if (allTransakcije.length === 0) return;
 
-  // Napravi niz tačaka (datum, kumulativno stanje)
   let cum = 0;
   const tacke = [];
-  // Početna tačka
   tacke.push({ label: '', val: 0 });
   allTransakcije.forEach(t => {
     if (t.tip === 'Kupovina') cum += t.evri;
@@ -1796,11 +1750,9 @@ function drawEvraChart(m) {
   function toX(i) { return PAD_LEFT + (i / Math.max(n - 1, 1)) * chartW; }
   function toY(val) { return PAD_TOP + chartH - ((val - yMin) / Math.max(yMax - yMin, 1)) * chartH; }
 
-  // Background
   ctx.fillStyle = '#18181f';
   ctx.fillRect(0, 0, W, H);
 
-  // Grid + Y labels
   ctx.strokeStyle = '#2a2a38';
   ctx.lineWidth = 1;
   ctx.fillStyle = '#7a7a92';
@@ -1814,14 +1766,12 @@ function drawEvraChart(m) {
     y = Math.round((y + step) * 100) / 100;
   }
 
-  // X labels — datum svake transakcije
   ctx.textAlign = 'center';
   ctx.fillStyle = '#7a7a92';
   tacke.forEach((t, i) => {
     if (t.label) ctx.fillText(t.label, toX(i), PAD_TOP + chartH + 16);
   });
 
-  // Area fill
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(tacke[0].val));
   for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(tacke[i].val));
@@ -1831,7 +1781,6 @@ function drawEvraChart(m) {
   ctx.fillStyle = 'rgba(79,142,247,0.12)';
   ctx.fill();
 
-  // Linija
   ctx.beginPath();
   ctx.strokeStyle = '#4f8ef7';
   ctx.lineWidth = 2.5;
@@ -1840,14 +1789,12 @@ function drawEvraChart(m) {
   for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(tacke[i].val));
   ctx.stroke();
 
-  // Tačke + vrednosti
   tacke.forEach((t, i) => {
     if (i === 0) return;
     ctx.beginPath();
     ctx.arc(toX(i), toY(t.val), 4, 0, Math.PI * 2);
     ctx.fillStyle = '#4f8ef7';
     ctx.fill();
-    // Vrednost iznad tačke
     ctx.fillStyle = '#4f8ef7';
     ctx.font = '9px DM Mono, monospace';
     ctx.textAlign = 'center';
@@ -1855,20 +1802,15 @@ function drawEvraChart(m) {
   });
 }
 
-
-
 function attachListeners(m) {
   const page = document.getElementById('page_' + m.id);
   if (!page) return;
 
-  // Prenos - editable for all months
   page.querySelectorAll('.prenos-inp').forEach(el => {
     el.addEventListener('change', e => {
       getMonth(e.target.dataset.mid).prenos = parseNum(e.target.value);
-      // Don't cascade from this month - manual override
       saveState();
       rerenderMonth(e.target.dataset.mid);
-      // Still update all subsequent months based on this month's new totals
       const idx2 = state.months.findIndex(mm => mm.id === e.target.dataset.mid);
       cascadePrenosFrom(idx2 + 1);
       saveState();
@@ -1878,7 +1820,6 @@ function attachListeners(m) {
     });
   });
 
-  // Prenos reset to auto
   page.querySelectorAll('.prenos-reset-btn').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
@@ -1897,7 +1838,6 @@ function attachListeners(m) {
     });
   });
 
-  // Plata
   page.querySelectorAll('.plata-inp').forEach(el => {
     el.addEventListener('change', e => {
       getMonth(e.target.dataset.mid).plata = e.target.value;
@@ -1905,7 +1845,6 @@ function attachListeners(m) {
     });
   });
 
-  // Uplata fields
   page.querySelectorAll('.uplata-naziv-inp').forEach(el => {
     el.addEventListener('change', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1928,7 +1867,6 @@ function attachListeners(m) {
     });
   });
 
-  // Uplata add
   page.querySelectorAll('.uplata-add-btn').forEach(el => {
     el.addEventListener('click', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1937,7 +1875,6 @@ function attachListeners(m) {
     });
   });
 
-  // Uplata del
   page.querySelectorAll('.uplata-del-btn').forEach(el => {
     el.addEventListener('click', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1948,7 +1885,6 @@ function attachListeners(m) {
     });
   });
 
-  // Sekcija naziv
   page.querySelectorAll('.sek-naziv-inp').forEach(el => {
     el.addEventListener('change', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1957,7 +1893,6 @@ function attachListeners(m) {
     });
   });
 
-  // Sekcija datum
   page.querySelectorAll('.sek-datum-inp').forEach(el => {
     el.addEventListener('change', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1966,7 +1901,6 @@ function attachListeners(m) {
     });
   });
 
-  // Sekcija iznos
   page.querySelectorAll('.sek-iznos-inp').forEach(el => {
     el.addEventListener('change', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1975,7 +1909,6 @@ function attachListeners(m) {
     });
   });
 
-  // Sekcija add red
   page.querySelectorAll('.sek-add-btn').forEach(el => {
     el.addEventListener('click', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1984,7 +1917,6 @@ function attachListeners(m) {
     });
   });
 
-  // Sekcija del red
   page.querySelectorAll('.sek-del-btn').forEach(el => {
     el.addEventListener('click', e => {
       const month = getMonth(e.target.dataset.mid);
@@ -1996,7 +1928,6 @@ function attachListeners(m) {
     });
   });
 
-  // ---- DEVIZE J ----
   function blankDevJ() { return { tip: 'Kupovina', datum: '', dinari: '', evri: '' }; }
 
   page.querySelectorAll('.devJ-tip-sel').forEach(el => {
@@ -2032,7 +1963,6 @@ function attachListeners(m) {
       if (!month.devizeJ) month.devizeJ = [];
       const row = month.devizeJ[parseInt(e.target.dataset.idx)];
       row.evri = e.target.value;
-      // Auto izračunaj dinare ako kurs postoji
       const kurs = parseNum(row.kurs) || 117;
       if (row.tip !== 'Dizanje' && parseNum(row.evri) > 0) {
         row.dinari = Math.round(parseNum(row.evri) * kurs * 100) / 100;
@@ -2047,7 +1977,6 @@ function attachListeners(m) {
       if (!month.devizeJ) month.devizeJ = [];
       const row = month.devizeJ[parseInt(e.target.dataset.idx)];
       row.kurs = e.target.value;
-      // Preračunaj dinare sa novim kursom
       if (row.tip !== 'Dizanje' && parseNum(row.evri) > 0) {
         row.dinari = Math.round(parseNum(row.evri) * parseNum(row.kurs) * 100) / 100;
       }
@@ -2088,44 +2017,37 @@ function getMonth(mid) {
   return state.months.find(m => m.id === mid);
 }
 
-// Recalculate prenos for all months starting from index startIdx
-// prenos[i] = razlika[i-1]
 function cascadePrenosFrom(startIdx) {
   for (let i = startIdx; i < state.months.length; i++) {
-    if (i === 0) continue; // first month keeps its prenos as manually entered
+    if (i === 0) continue;
     const prev = state.months[i - 1];
     const lc = calcMonth(prev);
-    // Store as plain number to avoid re-parsing issues
     state.months[i].prenos = Math.round(lc.razlika * 100) / 100;
   }
 }
 
-// Call after any data change: cascade from the month AFTER the changed one
 function onMonthChanged(mid) {
   const idx = state.months.findIndex(m => m.id === mid);
   if (idx === -1) return;
   cascadePrenosFrom(idx + 1);
   saveState();
-  // Rerender changed month + all subsequent months
   for (let i = idx; i < state.months.length; i++) {
     rerenderMonth(state.months[i].id);
   }
 }
 
 // ===================== TABS / MONTHS =====================
-let activeTab = 0;
-
 function deleteMonth(e, mid) {
   e.stopPropagation();
   if (!confirm('Obrisati ovaj mesec?')) return;
   const idx = state.months.findIndex(m => m.id === mid);
   state.months.splice(idx, 1);
   if (activeTab >= state.months.length) activeTab = Math.max(0, state.months.length - 1);
+  saveActiveTab(racuni.activeId, activeTab);
   saveState();
   render();
 }
 
-// Modal
 document.getElementById('addMonthBtn').addEventListener('click', () => {
   document.getElementById('modalOverlay').classList.add('open');
 });
@@ -2136,7 +2058,6 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) document.getElementById('modalOverlay').classList.remove('open');
 });
 
-// Populate year select
 const yearSel = document.getElementById('modalGodina');
 const curYear = new Date().getFullYear();
 for (let y = 2000; y <= 2099; y++) {
@@ -2150,7 +2071,6 @@ document.getElementById('modalConfirm').addEventListener('click', () => {
   const mesec = document.getElementById('modalMesec').value;
   const godina = document.getElementById('modalGodina').value;
 
-  // Get prenos from last month razlika
   let prenos = 0;
   let prevMonth = null;
   if (state.months.length > 0) {
@@ -2162,9 +2082,8 @@ document.getElementById('modalConfirm').addEventListener('click', () => {
   const nm = blankMonth(mesec, godina, prenos, prevMonth);
   state.months.push(nm);
   sortMonths();
-  // Find the newly added month's position after sort
   activeTab = state.months.findIndex(m => m.id === nm.id);
-  // Recascade all prenos from scratch after sort
+  saveActiveTab(racuni.activeId, activeTab);
   cascadePrenosFrom(1);
   saveState();
   document.getElementById('modalOverlay').classList.remove('open');
@@ -2173,7 +2092,6 @@ document.getElementById('modalConfirm').addEventListener('click', () => {
 
 // ===================== PRINT =====================
 document.getElementById('printBtn').addEventListener('click', () => {
-  // Mark only the active tab for printing
   document.querySelectorAll('.month-page').forEach(el => el.classList.remove('print-active'));
   const pages = document.querySelectorAll('.month-page');
   if (pages[activeTab]) pages[activeTab].classList.add('print-active');
@@ -2189,7 +2107,6 @@ function showToast(msg, isError) {
 }
 
 document.getElementById('exportBtn').addEventListener('click', async () => {
-  // Sačuvaj trenutni state u aktivni račun pre exporta
   const current = racuni.list.find(x => x.id === racuni.activeId);
   if (current) current.data = state;
 
@@ -2199,7 +2116,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   const datum = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
   const fileName = 'evidencija_troskova_' + datum + '.json';
 
-  // Try modern File System Access API (Chrome/Edge - allows choosing save location)
   if (window.showSaveFilePicker) {
     try {
       const fileHandle = await window.showSaveFilePicker({
@@ -2212,12 +2128,10 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       showToast('✅ Podaci uspešno sačuvani!');
       return;
     } catch (e) {
-      if (e.name === 'AbortError') return; // user cancelled
-      // fallthrough to classic download
+      if (e.name === 'AbortError') return;
     }
   }
 
-  // Fallback: classic download (Firefox, Safari - goes to Downloads)
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2242,14 +2156,12 @@ document.getElementById('importFileInput').addEventListener('change', e => {
       if (!confirm('Da li želite da zamenite sve postojeće podatke uvezenim podacima?')) return;
 
       if (parsed.version === 2 && parsed.racuni) {
-        // Novi format — svi računi
         racuni = parsed.racuni;
         if (!racuni.list || racuni.list.length === 0) throw new Error('Nema računa');
         const active = racuni.list.find(x => x.id === racuni.activeId) || racuni.list[0];
         racuni.activeId = active.id;
         state = fixStateFields(active.data);
       } else if (parsed.months) {
-        // Stari format — uvezi u TRENUTNO AKTIVNI račun
         const active = racuni.list.find(x => x.id === racuni.activeId);
         const data = fixStateFields(parsed);
         if (active) {
@@ -2262,7 +2174,7 @@ document.getElementById('importFileInput').addEventListener('change', e => {
 
       sortMonths();
       cascadePrenosFrom(1);
-      activeTab = 0;
+      activeTab = getSavedTab(racuni.activeId);
       saveState();
       updateRacunHeader();
       render();
@@ -2361,7 +2273,6 @@ function renderDevizePage() {
     ${buildTable(usdRows, 'USD', '$', 'valuta-usd')}
   `;
 
-  // Attach listeners
   page.querySelectorAll('.dev-datum').forEach(el => {
     el.addEventListener('change', e => {
       const r = state.devize.find(x => x.id === e.target.dataset.id);
@@ -2381,7 +2292,6 @@ function renderDevizePage() {
       const r = state.devize.find(x => x.id === e.target.dataset.id);
       if (r) {
         r.iznos = parseNum(e.target.value);
-        // Auto-calculate dinari if kurs is set
         if (parseNum(r.kurs) > 0) {
           r.dinari = Math.round(r.iznos * parseNum(r.kurs) * 100) / 100;
         }
@@ -2395,7 +2305,6 @@ function renderDevizePage() {
       const r = state.devize.find(x => x.id === e.target.dataset.id);
       if (r) {
         r.kurs = parseNum(e.target.value);
-        // Auto-calculate dinari
         if (parseNum(r.iznos) > 0) {
           r.dinari = Math.round(r.iznos * r.kurs * 100) / 100;
         }
@@ -2452,7 +2361,6 @@ function hideDevizePage() {
 // ===================== INIT =====================
 loadState();
 
-// Novi račun dugme
 document.getElementById('noviRacunBtn').addEventListener('click', () => {
   const inp = document.getElementById('noviRacunInput');
   if (inp.value.trim()) { addRacun(inp.value); inp.value = ''; }
@@ -2461,22 +2369,18 @@ document.getElementById('noviRacunInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('noviRacunBtn').click();
 });
 
-// Klik van picker boxa zatvori picker (samo ako ima računa)
 document.getElementById('racunPickerOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('racunPickerOverlay') && racuni.activeId) {
     hideRacunPicker();
   }
 });
 
-// Ažuriraj header naziv
 updateRacunHeader();
 
-// Ako nema računa — prikaži picker odmah
 if (racuni.list.length === 0) {
   showRacunPicker();
 }
 
-// Devize tab dugme
 document.getElementById('devizeTabBtn').addEventListener('click', () => {
   if (devizePageActive) {
     hideDevizePage();
@@ -2486,7 +2390,6 @@ document.getElementById('devizeTabBtn').addEventListener('click', () => {
   }
 });
 
-// Skoci na tekuci mesec pri otvaranju
 (function() {
   if (state.months.length === 0) return;
   const now = new Date();
@@ -2494,12 +2397,10 @@ document.getElementById('devizeTabBtn').addEventListener('click', () => {
   const mesecNazivi = ['Januar','Februar','Mart','April','Maj','Jun',
                        'Jul','Avgust','Septembar','Oktobar','Novembar','Decembar'];
   const curMesec = mesecNazivi[now.getMonth()];
-  // Nadji tab koji odgovara tekucem mesecu i godini
   let idx = state.months.findIndex(m => m.mesec === curMesec && parseInt(m.godina) === curYear);
   if (idx !== -1) {
     activeTab = idx;
   } else {
-    // Ako nema tekuceg meseca, skoci na poslednji (najnoviji)
     activeTab = state.months.length - 1;
   }
 })();
