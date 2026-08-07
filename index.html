@@ -721,7 +721,7 @@
 </style>
 </head>
 <body>
-  <header>
+<header>
   <h1>💰 Evidencija Troškova</h1>
   <div class="racun-dropdown" style="position:relative;display:inline-block;">
     <button class="hbtn" id="racunDropdownBtn" style="background:var(--surface2);color:var(--green);border-color:var(--green);">
@@ -1011,8 +1011,7 @@ function getSavedTab(accountId) {
 
 function saveActiveTab(accountId, tabIndex) {
     localStorage.setItem('activeTab_' + accountId, tabIndex);
-}
-let activeTab = 0;
+}let activeTab = 0;
 
 function render() {
   if (devizePageActive) return;
@@ -1365,8 +1364,7 @@ function buildChartData(m) {
   }
 
   return { days, balanceData, prihodiData, troškoviData };
-}
-function drawChart(m) {
+}function drawChart(m) {
   const canvas = document.getElementById('chart_' + m.id);
   if (!canvas) return;
 
@@ -1853,8 +1851,7 @@ function onMonthChanged(mid) {
   for (let i = idx; i < state.months.length; i++) {
     rerenderMonth(state.months[i].id);
   }
-}
-// ===== DROPDOWN RACUN =====
+}// ===== DROPDOWN RACUN =====
 function renderRacunDropdown() {
   const list = document.getElementById('racunDropdownList');
   if (!list) return;
@@ -1865,33 +1862,6 @@ function renderRacunDropdown() {
     </div>
   `).join('');
 }
-
-// Toggle dropdown
-document.getElementById('racunDropdownBtn').addEventListener('click', (e) => {
-  e.stopPropagation();
-  const menu = document.getElementById('racunDropdownMenu');
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-  renderRacunDropdown();
-});
-
-// Zatvori dropdown klikom van
-document.addEventListener('click', () => {
-  document.getElementById('racunDropdownMenu').style.display = 'none';
-});
-
-// Novi racun preko dropdowna
-document.getElementById('noviRacunDropdownBtn').addEventListener('click', () => {
-  const inp = document.getElementById('noviRacunDropdownInput');
-  if (inp.value.trim()) {
-    addRacun(inp.value);
-    inp.value = '';
-    renderRacunDropdown();
-    document.getElementById('racunDropdownMenu').style.display = 'block';
-  }
-});
-document.getElementById('noviRacunDropdownInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('noviRacunDropdownBtn').click();
-});
 
 // ===================== TABS / MONTHS =====================
 function deleteMonth(e, mid) {
@@ -2218,45 +2188,52 @@ function hideDevizePage() {
 // ===================== INIT =====================
 loadState();
 
-// Inicijalizuj dropdown
-updateRacunHeader();
+// === POVEZIVANJE DROPDOWN DUGMETA ===
+// Ovo mora da se desi NAKON što se stranica učita
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicijalizuj header
+  updateRacunHeader();
 
-// Event listener za dropdown dugme
-document.getElementById('racunDropdownBtn').addEventListener('click', (e) => {
-  e.stopPropagation();
+  // Dropdown toggle
+  const btn = document.getElementById('racunDropdownBtn');
   const menu = document.getElementById('racunDropdownMenu');
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-  renderRacunDropdown();
-});
+  
+  if (btn && menu) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+      } else {
+        menu.style.display = 'block';
+        renderRacunDropdown();
+      }
+    });
+  }
 
-// Zatvori dropdown klikom van
-document.addEventListener('click', () => {
-  document.getElementById('racunDropdownMenu').style.display = 'none';
-});
+  // Zatvori klikom van
+  document.addEventListener('click', function() {
+    if (menu) menu.style.display = 'none';
+  });
 
-// Novi racun preko dropdowna
-document.getElementById('noviRacunDropdownBtn').addEventListener('click', () => {
-  const inp = document.getElementById('noviRacunDropdownInput');
-  if (inp.value.trim()) {
-    addRacun(inp.value);
-    inp.value = '';
-    renderRacunDropdown();
-    document.getElementById('racunDropdownMenu').style.display = 'block';
+  // Novi račun
+  const noviBtn = document.getElementById('noviRacunDropdownBtn');
+  const noviInput = document.getElementById('noviRacunDropdownInput');
+  
+  if (noviBtn && noviInput) {
+    noviBtn.addEventListener('click', function() {
+      if (noviInput.value.trim()) {
+        addRacun(noviInput.value);
+        noviInput.value = '';
+        renderRacunDropdown();
+        if (menu) menu.style.display = 'block';
+      }
+    });
+    
+    noviInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') noviBtn.click();
+    });
   }
 });
-document.getElementById('noviRacunDropdownInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('noviRacunDropdownBtn').click();
-});
-
-document.getElementById('racunPickerOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('racunPickerOverlay') && racuni.activeId) {
-    document.getElementById('racunPickerOverlay').classList.remove('open');
-  }
-});
-
-if (racuni.list.length === 0) {
-  // Ako nema racuna, pokazi dropdown
-}
 
 document.getElementById('devizeTabBtn').addEventListener('click', () => {
   if (devizePageActive) {
